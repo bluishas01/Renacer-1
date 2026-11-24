@@ -17,6 +17,7 @@ import {
   getPendingLegalFields,
   IS_PUBLIC_LAUNCH_LEGAL_READY,
   LEGAL_DOCUMENTS,
+  LEGAL_ENTITY_CONFIG,
   QUICKSTART_STEPS,
   VERIFIED_CRISIS_DIRECTORY,
   VERIFIED_EMERGENCY_REVIEW_DATE,
@@ -219,6 +220,19 @@ export const LegalDocsModal: React.FC<LegalDocsModalProps> = ({
                       ))}
                     </section>
                   ))}
+                </div>
+
+                <div className="rounded-xl border border-[#E3DDD0] bg-[#FAF8F3] p-3.5 text-xs text-[#2D4A3B] space-y-1">
+                  <p className="font-semibold text-[#14241C]">
+                    Soporte técnico y privacidad: {LEGAL_ENTITY_CONFIG.supportEmail}
+                  </p>
+                  <p>
+                    Horario: {LEGAL_ENTITY_CONFIG.supportHours} ({LEGAL_ENTITY_CONFIG.supportTimezone}) ·
+                    Respuesta inicial: {LEGAL_ENTITY_CONFIG.supportResponseSLA}.
+                  </p>
+                  <p className="text-[11px] text-[#991B1B]">
+                    El correo no es un canal de emergencias y RENACER no ofrece supervisión humana en tiempo real.
+                  </p>
                 </div>
               </article>
             </div>

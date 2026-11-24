@@ -45,7 +45,7 @@
 - **Versionado unificado (`1.0.0`):** `package.json`, `vite.config.ts` (manifiesto PWA), `src/data/legalAndDocs.ts`, `AuthScreen.tsx`, `LegalDocsModal.tsx` y documentación de lanzamiento alineados en la versión `1.0.0`.
 - **Acceso 100% gratuito verificado:** presentación, términos, FAQ, manual, manifiesto PWA y paquete de lanzamiento alineados con gratuidad total, cero publicidad y cero pasarelas de pago.
 - **Método de autenticación oficial conservado:** acceso único mediante **Continuar con Google** en Firebase Authentication; sin habilitar Correo/Contraseña y manteniendo intactas las reglas `firestore.rules` y el aislamiento por `UID`.
-- **Configuración jurídica centralizada (`LEGAL_ENTITY_CONFIG` en `src/data/legalAndDocs.ts`):** incluye los datos expresamente autorizados por el propietario (`José Andrés Martínez Colorado`, `Sóstenes Rocha 45, Zona Centro, Acámbaro, Guanajuato, México`, `lift884@gmail.com` para privacidad/ARCO y soporte), sin inventar RFC, código postal ni razón social; conserva edad mínima provisional (`18 años`), jurisdicción (`México`), aviso no médico/no de emergencias y advertencia administrativa en pantalla (`IS_PUBLIC_LAUNCH_LEGAL_READY === false`) mientras falten el horario/SLA de soporte y la revisión jurídica profesional en México.
+- **Configuración jurídica y de soporte centralizada (`LEGAL_ENTITY_CONFIG` en `src/data/legalAndDocs.ts`):** incluye los datos autorizados del responsable (`José Andrés Martínez Colorado`, `Sóstenes Rocha 45, Zona Centro, Acámbaro, Guanajuato, México`, `lift884@gmail.com` para privacidad/ARCO y soporte) y el cierre operativo de soporte (`lunes a viernes, de 09:00 a 17:00 horas`, `America/Mexico_City`, `máximo 3 días hábiles para una respuesta inicial`), sin inventar RFC, código postal ni razón social. Mantiene explícito que el correo no es un canal de emergencias, que RENACER no ofrece supervisión humana en tiempo real y que `IS_PUBLIC_LAUNCH_LEGAL_READY === false` mientras falte la revisión jurídica profesional conforme a la legislación mexicana.
 - **Protección contra abuso y cuotas técnicas (`server.ts`):** limitador de frecuencia por `UID` en `/api/ai/chat` y `/api/community/moderate` con HTTP `429` y cabecera `Retry-After`, manteniendo `GEMINI_API_KEY` exclusivamente en el servidor.
 - **Seguridad clínica y líneas de crisis verificadas (México y LATAM/ES/EE. UU.):** detección ampliada de intoxicación aguda, coma etílico, autolesión, sobredosis y abstinencia peligrosa; inclusión de **911**, **CONASAMA Línea de la Vida (`800 911 2000`)**, **SAPTEL (`55 5259 8121`)** y **LOCATEL CDMX (`*0311` / `55 5658 1111`)** verificados al `2026-11-24`, con aviso explícito de que RENACER IA **no** cuenta con supervisión humana en tiempo real.
 - **Eliminación integral de cuenta (`src/services/firebaseVault.ts`):** al borrar cuenta (previa reautenticación reciente), elimina las 15 subcolecciones privadas, perfil `users/{uid}`, publicaciones y respuestas propias, retira atómicamente reacciones/reportes en hilos visibles y limpia `IndexedDB`, `sessionStorage` y preferencias locales.
@@ -95,23 +95,28 @@
 - **Reglas de Firestore:** cualquier cambio futuro en `firestore.rules` debe pasar primero `npx eslint firestore.rules` y nunca relajar `isOwner` o `isVerified()`.
 - **Variables de entorno y secretos:** `GEMINI_API_KEY` reside únicamente en el servidor (`Settings > Secrets` en AI Studio o variable de entorno en Cloud Run). Nunca usar prefijo `VITE_` para `GEMINI_API_KEY`.
 - **Límites Starter Tier y operación gratuita:** no habilitar facturación ni suscripciones; `firebase-admin` verifica tokens con claves públicas (`verifyIdToken`) y toda operación de datos permanece en el cliente autenticado + reglas estrictas. No añadir pasarelas de pago ni redes publicitarias.
-- **Documentación jurídica centralizada (`src/data/legalAndDocs.ts`):**
-  - **Datos publicados por autorización expresa del propietario:**
+- **Documentación jurídica y de soporte centralizada (`src/data/legalAndDocs.ts`):**
+  - **Datos autorizados del responsable y soporte:**
     - `controllerName`: `José Andrés Martínez Colorado`.
     - `controllerAddressMexico`: `Sóstenes Rocha 45, Zona Centro, Acámbaro, Guanajuato, México` (sin código postal ni RFC inventados).
     - `privacyAndArcoEmail`: `lift884@gmail.com`.
     - `supportEmail`: `lift884@gmail.com`.
-  - **Requisitos aún pendientes conforme a la legislación mexicana (LFPDPPP y su Reglamento) antes de declarar cumplimiento definitivo (`IS_PUBLIC_LAUNCH_LEGAL_READY === false`):**
+    - `supportHours`: `lunes a viernes, de 09:00 a 17:00 horas`.
+    - `supportTimezone`: `America/Mexico_City`.
+    - `supportResponseSLA`: `máximo 3 días hábiles para una respuesta inicial`.
+    - `supportHoursAndSla`: `lunes a viernes, de 09:00 a 17:00 horas (America/Mexico_City) · Respuesta inicial: máximo 3 días hábiles`.
+  - **Pendiente jurídico conforme a la legislación mexicana (LFPDPPP y su Reglamento) antes de declarar cumplimiento definitivo (`IS_PUBLIC_LAUNCH_LEGAL_READY === false`):**
     1. `retentionAndDeadlinesReviewed` (`false`): revisión profesional por abogado en México sobre consentimiento expreso para datos sensibles de salud/adicciones y financieros (Art. 9 LFPDPPP), cláusula de transferencias internacionales a infraestructura en nube (Firebase / Google Gemini, Art. 36 LFPDPPP), plazos de conservación, bloqueo y supresión por inactividad (Art. 11 y 37 Reglamento), acreditación y plazos legales ARCO (20 + 15 días hábiles, Art. 32 LFPDPPP), validación de edad mínima (`18 años`) y confirmación opcional de código postal o aviso simplificado.
-    2. `supportHoursAndSla` (`null`): definir horario y tiempo estimado oficial de atención para soporte técnico en `lift884@gmail.com`.
 
 ---
 
 ## 8. Planes de Operación, Soporte, Incidentes y Monitoreo
 
-### Plan de Soporte
-- **Canales:** correo oficial activo de privacidad/ARCO y soporte técnico: `lift884@gmail.com`; pendiente definir únicamente `supportHoursAndSla` en `LEGAL_ENTITY_CONFIG` (`src/data/legalAndDocs.ts`).
-- **Alcance:** soporte técnico atiende fallos de acceso con Google, sincronización, exportación o reportes de comunidad; **nunca** atiende emergencias médicas ni crisis emocionales.
+### Plan de Soporte (Cerrado para `1.0.0`)
+- **Canal oficial:** `lift884@gmail.com` (privacidad, solicitudes ARCO y soporte técnico).
+- **Horario y zona horaria:** lunes a viernes, de 09:00 a 17:00 horas (`America/Mexico_City`).
+- **Tiempo estimado de respuesta (SLA):** máximo 3 días hábiles para una respuesta inicial.
+- **Límite de emergencias y supervisión:** el correo electrónico (`lift884@gmail.com`) **NO es un canal de emergencias** y **RENACER NO ofrece supervisión humana en tiempo real**. Soporte técnico atiende únicamente fallos de acceso con Google, sincronización, exportación, solicitudes ARCO o reportes de comunidad; ante urgencias médicas o crisis emocionales se debe utilizar el botón *Necesito ayuda ahora* (911 / `800 911 2000`).
 
 ### Plan de Respuesta a Incidentes
 1. **Incidente de seguridad / fuga / regla permisiva:** congelar publicación (`Share / Publish` o tráfico), inspeccionar `firestore.rules`, rotar `GEMINI_API_KEY` en Secrets si estuvo involucrada, revisar accesos en Firebase Console y notificar a usuarios afectados conforme a asesoría legal.
@@ -144,5 +149,5 @@
 
 ## 10. Regla de Apertura: Beta Privada vs. Lanzamiento Público
 
-- **Beta Privada controlada (tras completar la Sección 9B):** viable informando expresamente que RENACER es 100% gratuita, que muestra ya los datos del responsable autorizado y que sus documentos legales están en **revisión profesional** (sin certificación jurídica definitiva).
-- **Lanzamiento Público abierto (bloqueado hasta completar revisión jurídica y SLA):** no declarar cumplimiento jurídico certificado ni abrir al público general hasta que un especialista en derecho mexicano valide los puntos pendientes de LFPDPPP, se defina `supportHoursAndSla` y `IS_PUBLIC_LAUNCH_LEGAL_READY` pase a `true`.
+- **Beta Privada controlada (tras completar la Sección 9B):** viable informando expresamente que RENACER es 100% gratuita, que cuenta con datos del responsable y política de soporte cerrada (`lift884@gmail.com`, lunes a viernes 09:00–17:00 `America/Mexico_City`, respuesta inicial en máximo 3 días hábiles), que no ofrece supervisión humana en tiempo real ni canal de emergencias por correo y que sus textos legales permanecen en **revisión jurídica profesional** (sin certificación jurídica definitiva).
+- **Lanzamiento Público abierto (bloqueado hasta completar revisión jurídica profesional):** no declarar cumplimiento jurídico certificado ni abrir al público general hasta que un especialista en derecho mexicano valide los puntos pendientes de LFPDPPP y `IS_PUBLIC_LAUNCH_LEGAL_READY` pase a `true`.

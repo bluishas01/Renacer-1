@@ -28,6 +28,7 @@ import { LegalDocsModal, type LegalCenterTab } from './LegalDocsModal';
 import {
   APP_VERSION,
   IS_PUBLIC_LAUNCH_LEGAL_READY,
+  LEGAL_ENTITY_CONFIG,
   type LegalDocumentItem,
 } from '../data/legalAndDocs';
 import { PWAInstallButton } from './PWAInstallButton';
@@ -927,6 +928,13 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                 </button>
                 <button
                   type="button"
+                  onClick={() => openLegalCenter('legal', 'contacto_soporte')}
+                  className="font-medium text-[#1B4332] hover:underline"
+                >
+                  Contacto y Soporte
+                </button>
+                <button
+                  type="button"
                   onClick={() => openLegalCenter('legal', 'limitaciones_ia')}
                   className="font-medium text-[#1B4332] hover:underline"
                 >
@@ -947,6 +955,14 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                   Emergencias (911 / 800 911 2000)
                 </button>
               </div>
+              <p className="border-t border-[#E3DDD0] pt-2 text-[11px] leading-relaxed text-[#4C5E54]">
+                Soporte y ARCO: <span className="font-medium text-[#14241C]">{LEGAL_ENTITY_CONFIG.supportEmail}</span> ·{' '}
+                {LEGAL_ENTITY_CONFIG.supportHours} ({LEGAL_ENTITY_CONFIG.supportTimezone}) · Respuesta inicial:{' '}
+                {LEGAL_ENTITY_CONFIG.supportResponseSLA}.{' '}
+                <span className="text-[#991B1B]">
+                  Este correo no es un canal de emergencias y RENACER no ofrece supervisión humana en tiempo real.
+                </span>
+              </p>
             </div>
           </div>
         </div>
