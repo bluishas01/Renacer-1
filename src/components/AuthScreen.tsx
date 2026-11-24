@@ -25,7 +25,11 @@ import { createUserProfileAndVault } from '../services/firebaseVault';
 import type { RecoveryFocus } from '../types/renacer';
 import { todayISO } from '../utils/recoveryMath';
 import { LegalDocsModal, type LegalCenterTab } from './LegalDocsModal';
-import { type LegalDocumentItem } from '../data/legalAndDocs';
+import {
+  APP_VERSION,
+  IS_PUBLIC_LAUNCH_LEGAL_READY,
+  type LegalDocumentItem,
+} from '../data/legalAndDocs';
 import { PWAInstallButton } from './PWAInstallButton';
 
 const HERO_IMAGE = '/src/assets/images/renacer_sanctuary_hero_1795465214434.jpg';
@@ -45,7 +49,7 @@ function mapFirebaseAuthError(err: unknown): string {
   switch (code) {
     case 'auth/operation-not-allowed':
     case 'auth/admin-restricted-operation':
-      return 'El acceso con correo y contraseña aún no está habilitado en Firebase Console (Authentication > Sign-in method). Puedes entrar de inmediato con "Continuar con Google".';
+      return 'El acceso oficial de RENACER es mediante "Continuar con Google". Utiliza el botón verde superior para entrar de forma segura.';
     case 'auth/email-already-in-use':
       return 'Ya existe una cuenta registrada con ese correo electrónico.';
     case 'auth/invalid-credential':
@@ -320,8 +324,9 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
               Reconstruye tus hábitos. Recupera el control. Avanza un día a la vez.
             </h1>
             <p className="max-w-md text-sm leading-relaxed text-[#E3EDE7] sm:text-base">
-              Registra tus avances emocionales, maneja impulsos en tiempo real, ordena tus finanzas y
-              apóyate en un acompañante automatizado sin juicios ni vigilancia comercial.
+              RENACER es una plataforma gratuita para acompañarte en tu proceso de reconstrucción
+              personal. Registra tus emociones, maneja impulsos, ordena tus finanzas y apóyate en
+              herramientas sin suscripciones, publicidad ni vigilancia comercial.
             </p>
             <div className="overflow-hidden rounded-2xl border border-white/15 bg-black/20">
               <img
@@ -344,7 +349,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
               <span>Autenticación con Firebase Auth y datos aislados por usuario en Cloud Firestore.</span>
             </div>
             <p className="text-[#C6DDD0]">
-              Cero venta de información · Sin publicidad · Exportación y eliminación total cuando lo decidas.
+              100% gratuita · Todas las funciones incluidas · Sin publicidad ni venta de datos · Exportación y eliminación total cuando lo decidas.
             </p>
           </div>
         </div>
@@ -896,15 +901,22 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                 <span className="font-semibold text-[#14241C]">
                   Transparencia, guías y ayuda verificada
                 </span>
-                <span className="text-[11px] text-[#4C5E54]">Versión candidata 1.0</span>
+                <span className="font-mono text-[11px] text-[#4C5E54]">
+                  v{APP_VERSION} · Acceso con Google
+                </span>
               </div>
+              {!IS_PUBLIC_LAUNCH_LEGAL_READY && (
+                <p className="rounded-lg bg-[#FEF3C7]/70 px-2.5 py-1.5 text-[11px] text-[#78350F]">
+                  Aviso informativo: los documentos legales incluyen los datos publicados del responsable y están sujetos a revisión jurídica profesional en México (sin certificación legal definitiva).
+                </p>
+              )}
               <div className="flex flex-wrap gap-x-4 gap-y-1.5">
                 <button
                   type="button"
                   onClick={() => openLegalCenter('legal', 'aviso_privacidad')}
                   className="font-medium text-[#1B4332] hover:underline"
                 >
-                  Aviso de Privacidad
+                  Aviso de Privacidad {IS_PUBLIC_LAUNCH_LEGAL_READY ? '' : '(en revisión)'}
                 </button>
                 <button
                   type="button"

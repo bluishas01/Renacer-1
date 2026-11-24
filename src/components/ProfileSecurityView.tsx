@@ -506,10 +506,10 @@ export const ProfileSecurityView: React.FC<ProfileSecurityViewProps> = ({
             </p>
           </div>
           <div className="rounded-xl bg-[#FAF8F3] p-4">
-            <p className="font-semibold text-[#14241C]">Cero venta o publicidad</p>
+            <p className="font-semibold text-[#14241C]">100% gratuita, sin anuncios ni venta de datos</p>
             <p className="mt-1">
-              RENACER no vende datos personales ni utiliza información de salud o adicciones para
-              perfilado publicitario ni rastreadores de terceros.
+              RENACER es una plataforma gratuita para acompañarte en tu proceso de reconstrucción
+              personal. Sin suscripciones, sin cobros ocultos, sin publicidad ni venta de información.
             </p>
           </div>
           <div className="rounded-xl bg-[#FAF8F3] p-4">

@@ -11,8 +11,11 @@ import {
   X,
 } from 'lucide-react';
 import {
+  APP_VERSION,
   BRAND_IDENTITY,
   FAQ_ITEMS,
+  getPendingLegalFields,
+  IS_PUBLIC_LAUNCH_LEGAL_READY,
   LEGAL_DOCUMENTS,
   QUICKSTART_STEPS,
   VERIFIED_CRISIS_DIRECTORY,
@@ -49,6 +52,7 @@ export const LegalDocsModal: React.FC<LegalDocsModalProps> = ({
 
   const selectedDoc =
     LEGAL_DOCUMENTS.find((d) => d.id === selectedDocId) ?? LEGAL_DOCUMENTS[0];
+  const pendingFields = getPendingLegalFields();
 
   return (
     <div
@@ -62,7 +66,7 @@ export const LegalDocsModal: React.FC<LegalDocsModalProps> = ({
         <div className="flex items-start justify-between gap-4 border-b border-[#E3DDD0] bg-white px-5 py-4 sm:px-7">
           <div>
             <p className="text-xs font-medium text-[#1B4332]">
-              RENACER 1.0 · Transparencia, privacidad y ayuda verificada
+              RENACER {APP_VERSION} · Transparencia, privacidad y ayuda verificada
             </p>
             <h2 id="legal-center-title" className="font-display text-xl font-semibold text-[#14241C] sm:text-2xl">
               Centro Legal, Privacidad y Guías
@@ -183,15 +187,24 @@ export const LegalDocsModal: React.FC<LegalDocsModalProps> = ({
                   </p>
                 </div>
 
-                {selectedDoc.requiresLegalReview && (
-                  <div className="flex items-start gap-2.5 rounded-xl border border-[#D97706]/30 bg-[#FEF3C7]/60 p-3 text-xs text-[#78350F]">
-                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[#92400E]" />
-                    <span>
-                      Este documento contiene campos marcados como{' '}
-                      <strong>[PENDIENTE DE DEFINICIÓN LEGAL]</strong> (razón social, domicilio en México,
-                      correo ARCO/soporte y plazos jurídicos) que deben completarse y validarse antes del
-                      lanzamiento público.
-                    </span>
+                {!IS_PUBLIC_LAUNCH_LEGAL_READY && selectedDoc.requiresLegalReview && (
+                  <div className="space-y-2 rounded-xl border border-[#991B1B]/25 bg-[#FEF2F2] p-3.5 text-xs text-[#991B1B]">
+                    <div className="flex items-start gap-2 font-semibold">
+                      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                      <span>
+                        AVISO ADMINISTRATIVO — EN REVISIÓN PROFESIONAL (SIN CERTIFICACIÓN JURÍDICA DEFINITIVA)
+                      </span>
+                    </div>
+                    <p className="leading-relaxed text-[#7F1D1D]">
+                      Los datos autorizados del responsable y contacto ya están publicados, pero estos textos no
+                      cuentan con certificación jurídica definitiva. Antes de abrir al público general en México,
+                      deben completarse y revisarse con asesoría legal profesional:
+                    </p>
+                    <ul className="list-disc space-y-0.5 pl-5 text-[11px] text-[#7F1D1D]">
+                      {pendingFields.map((f) => (
+                        <li key={f.key}>{f.label}</li>
+                      ))}
+                    </ul>
                   </div>
                 )}
 
@@ -321,6 +334,9 @@ export const LegalDocsModal: React.FC<LegalDocsModalProps> = ({
                 </h3>
                 <p className="mt-1 text-sm font-medium text-[#2D4A3B]">
                   {BRAND_IDENTITY.sloganSecondary}
+                </p>
+                <p className="mt-2 rounded-xl border border-[#1B4332]/20 bg-[#EBF3EE] px-3.5 py-2 text-xs font-semibold text-[#1B4332]">
+                  {BRAND_IDENTITY.freePlatformStatement}
                 </p>
                 <p className="mt-3 text-sm leading-relaxed text-[#4C5E54]">
                   {BRAND_IDENTITY.longDescription}

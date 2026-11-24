@@ -21,7 +21,7 @@ export default defineConfig(() => {
           id: '/',
           name: 'RENACER — Un día a la vez',
           short_name: 'RENACER',
-          description: 'Aplicación profesional de recuperación de adicciones y reconstrucción personal.',
+          description: 'RENACER es una plataforma gratuita para acompañarte en tu proceso de reconstrucción personal. Un día a la vez.',
           theme_color: '#1B4332',
           background_color: '#F7F4EC',
           display: 'standalone',
