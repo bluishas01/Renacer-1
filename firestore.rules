@@ -1,0 +1,821 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Safety Net (Default Deny)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Reusable Hardened Primitives ---
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isVerified() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidString(val, minLen, maxLen) {
+      return val is string && val.size() >= minLen && val.size() <= maxLen;
+    }
+
+    function isValidStringList(arr, maxItems) {
+      return arr is list
+        && arr.size() <= maxItems
+        && (arr.size() == 0 || (arr[0] is string && arr[0].size() <= 200));
+    }
+
+    function userExists(userId) {
+      return exists(/databases/$(database)/documents/users/$(userId));
+    }
+
+    // --- Validation Blueprints ---
+    function isValidUserProfile(data, uid) {
+      return data.keys().hasAll([
+          'uid', 'email', 'alias', 'focus', 'recoveryStartDate',
+          'dailySpendEstimate', 'currency', 'personalMotto',
+          'consentAcceptedAt', 'consentVersion', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'uid', 'email', 'alias', 'focus', 'recoveryStartDate',
+          'dailySpendEstimate', 'currency', 'personalMotto',
+          'consentAcceptedAt', 'consentVersion', 'createdAt', 'updatedAt'
+        ])
+        && data.uid == uid
+        && isValidId(data.uid)
+        && isValidString(data.email, 3, 160)
+        && isValidString(data.alias, 2, 40)
+        && data.focus in [
+          'Alcohol', 'Sustancias', 'Apuestas y juego',
+          'Tabaco o nicotina', 'Conductas compulsivas', 'Reconstrucción integral'
+        ]
+        && isValidString(data.recoveryStartDate, 4, 40)
+        && (data.dailySpendEstimate is int || data.dailySpendEstimate is float)
+        && data.dailySpendEstimate >= 0
+        && data.dailySpendEstimate <= 1000000
+        && isValidString(data.currency, 1, 6)
+        && isValidString(data.personalMotto, 1, 80)
+        && isValidString(data.consentAcceptedAt, 4, 40)
+        && isValidString(data.consentVersion, 1, 24)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidUserPlan(data, uid) {
+      return data.keys().hasAll([
+          'ownerId', 'reasonsToChange', 'coreValues', 'triggers',
+          'warningSigns', 'copingStrategies', 'blockedCommunityAliases', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerId', 'reasonsToChange', 'coreValues', 'triggers',
+          'warningSigns', 'copingStrategies', 'haltChecklistLastCheckedAt',
+          'blockedCommunityAliases', 'updatedAt'
+        ])
+        && data.ownerId == uid
+        && isValidId(data.ownerId)
+        && isValidStringList(data.reasonsToChange, 20)
+        && isValidStringList(data.coreValues, 20)
+        && isValidStringList(data.triggers, 20)
+        && isValidStringList(data.warningSigns, 20)
+        && isValidStringList(data.copingStrategies, 20)
+        && isValidStringList(data.blockedCommunityAliases, 50)
+        && (!('haltChecklistLastCheckedAt' in data)
+          || data.haltChecklistLastCheckedAt == null
+          || isValidString(data.haltChecklistLastCheckedAt, 4, 40))
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidInitialAssessment(data, uid) {
+      return data.keys().hasAll([
+          'ownerId', 'primaryFocus', 'secondaryAreas', 'frequencyLevel',
+          'severityScore', 'readinessScore', 'highRiskTimes', 'mainTriggers',
+          'supportLevel', 'clinicalAttentionFlag', 'notes', 'completedAt',
+          'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerId', 'primaryFocus', 'secondaryAreas', 'frequencyLevel',
+          'severityScore', 'readinessScore', 'highRiskTimes', 'mainTriggers',
+          'supportLevel', 'clinicalAttentionFlag', 'notes', 'completedAt',
+          'createdAt', 'updatedAt'
+        ])
+        && data.ownerId == uid
+        && isValidId(data.ownerId)
+        && data.primaryFocus in [
+          'Alcohol', 'Sustancias', 'Apuestas y juego',
+          'Tabaco o nicotina', 'Conductas compulsivas', 'Reconstrucción integral'
+        ]
+        && isValidStringList(data.secondaryAreas, 6)
+        && data.frequencyLevel in ['diaria', 'semanal', 'episodica', 'en_abstinencia']
+        && data.severityScore is int && data.severityScore >= 1 && data.severityScore <= 10
+        && data.readinessScore is int && data.readinessScore >= 1 && data.readinessScore <= 10
+        && isValidStringList(data.highRiskTimes, 8)
+        && isValidStringList(data.mainTriggers, 10)
+        && data.supportLevel in ['alto', 'moderado', 'bajo', 'aislado']
+        && data.clinicalAttentionFlag is bool
+        && isValidString(data.notes, 0, 500)
+        && isValidString(data.completedAt, 4, 40)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidEmotionalLog(data, uid) {
+      return data.keys().hasAll([
+          'ownerId', 'date', 'mood', 'energyLevel', 'stressLevel', 'note', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerId', 'date', 'mood', 'energyLevel', 'stressLevel', 'note', 'createdAt', 'updatedAt'
+        ])
+        && data.ownerId == uid
+        && isValidString(data.date, 8, 16)
+        && data.mood in ['Tranquilo', 'Esperanzado', 'Cansado', 'Ansioso', 'Vulnerable', 'Abrumado']
+        && data.energyLevel is int && data.energyLevel >= 1 && data.energyLevel <= 5
+        && data.stressLevel is int && data.stressLevel >= 1 && data.stressLevel <= 5
+        && isValidString(data.note, 0, 400)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidCravingLog(data, uid) {
+      return data.keys().hasAll([
+          'ownerId', 'intensity', 'trigger', 'toolUsed', 'outcome', 'note', 'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerId', 'intensity', 'trigger', 'toolUsed', 'outcome', 'note', 'createdAt'
+        ])
+        && data.ownerId == uid
+        && data.intensity is int && data.intensity >= 1 && data.intensity <= 10
+        && isValidString(data.trigger, 1, 80)
+        && isValidString(data.toolUsed, 0, 120)
+        && data.outcome in ['superado', 'en_proceso', 'recaida']
+        && isValidString(data.note, 0, 400)
+        && data.createdAt is timestamp;
+    }
+
+    function isValidConsumptionLog(data, uid) {
+      return data.keys().hasAll([
+          'ownerId', 'entryType', 'category', 'intensity', 'amountSpent',
+          'trigger', 'locationContext', 'copingAction', 'resetApplied',
+          'occurredAt', 'note', 'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerId', 'entryType', 'category', 'intensity', 'amountSpent',
+          'trigger', 'locationContext', 'copingAction', 'resetApplied',
+          'occurredAt', 'note', 'createdAt'
+        ])
+        && data.ownerId == uid
+        && data.entryType in ['deseo', 'consumo', 'apuesta', 'recaida']
+        && isValidString(data.category, 1, 60)
+        && data.intensity is int && data.intensity >= 1 && data.intensity <= 10
+        && (data.amountSpent is int || data.amountSpent is float)
+        && data.amountSpent >= 0 && data.amountSpent <= 100000000
+        && isValidString(data.trigger, 1, 100)
+        && isValidString(data.locationContext, 0, 80)
+        && isValidString(data.copingAction, 0, 120)
+        && data.resetApplied is bool
+        && isValidString(data.occurredAt, 4, 40)
+        && isValidString(data.note, 0, 500)
+        && data.createdAt is timestamp;
+    }
+
+    function isValidDailyPlanItem(data, uid) {
+      return data.keys().hasAll([
+          'ownerId', 'title', 'timeBlock', 'category', 'completedDates', 'active', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerId', 'title', 'timeBlock', 'category', 'completedDates', 'active', 'createdAt', 'updatedAt'
+        ])
+        && data.ownerId == uid
+        && isValidString(data.title, 1, 100)
+        && data.timeBlock in ['manana', 'tarde', 'noche']
+        && data.category in ['anclaje', 'autocuidado', 'prevencion', 'conexion']
+        && isValidStringList(data.completedDates, 400)
+        && data.active is bool
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidJournalEntry(data, uid) {
+      return data.keys().hasAll([
+          'ownerId', 'date', 'title', 'mood', 'energyLevel', 'stressLevel',
+          'content', 'gratitude', 'triggersNoticed', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerId', 'date', 'title', 'mood', 'energyLevel', 'stressLevel',
+          'content', 'gratitude', 'triggersNoticed', 'createdAt', 'updatedAt'
+        ])
+        && data.ownerId == uid
+        && isValidString(data.date, 8, 16)
+        && isValidString(data.title, 1, 100)
+        && data.mood in ['Tranquilo', 'Esperanzado', 'Cansado', 'Ansioso', 'Vulnerable', 'Abrumado']
+        && data.energyLevel is int && data.energyLevel >= 1 && data.energyLevel <= 5
+        && data.stressLevel is int && data.stressLevel >= 1 && data.stressLevel <= 5
+        && isValidString(data.content, 1, 2000)
+        && isValidString(data.gratitude, 0, 400)
+        && isValidString(data.triggersNoticed, 0, 240)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidRelapseAlert(data, uid) {
+      return data.keys().hasAll([
+          'ownerId', 'ruleKey', 'severity', 'title', 'message',
+          'recommendedAction', 'acknowledged', 'resolved', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerId', 'ruleKey', 'severity', 'title', 'message',
+          'recommendedAction', 'acknowledged', 'resolved', 'createdAt', 'updatedAt'
+        ])
+        && data.ownerId == uid
+        && isValidString(data.ruleKey, 1, 60)
+        && data.severity in ['baja', 'media', 'alta']
+        && isValidString(data.title, 1, 100)
+        && isValidString(data.message, 1, 400)
+        && isValidString(data.recommendedAction, 1, 200)
+        && data.acknowledged is bool
+        && data.resolved is bool
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidRecoveryStage(data, uid) {
+      return data.keys().hasAll([
+          'ownerId', 'startedAt', 'endedAt', 'daysCompleted', 'reflection', 'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerId', 'startedAt', 'endedAt', 'daysCompleted', 'reflection', 'createdAt'
+        ])
+        && data.ownerId == uid
+        && isValidString(data.startedAt, 4, 40)
+        && isValidString(data.endedAt, 4, 40)
+        && data.daysCompleted is int && data.daysCompleted >= 0 && data.daysCompleted <= 50000
+        && isValidString(data.reflection, 0, 400)
+        && data.createdAt is timestamp;
+    }
+
+    function isValidHabitItem(data, uid) {
+      return data.keys().hasAll([
+          'ownerId', 'title', 'category', 'completedDates', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerId', 'title', 'category', 'completedDates', 'createdAt', 'updatedAt'
+        ])
+        && data.ownerId == uid
+        && isValidString(data.title, 1, 80)
+        && data.category in ['descanso', 'cuerpo', 'mente', 'entorno']
+        && isValidStringList(data.completedDates, 400)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidFinanceEntry(data, uid) {
+      return data.keys().hasAll([
+          'ownerId', 'date', 'type', 'category', 'amount', 'note', 'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerId', 'date', 'type', 'category', 'amount', 'note', 'createdAt'
+        ])
+        && data.ownerId == uid
+        && isValidString(data.date, 8, 16)
+        && data.type in ['ingreso', 'gasto', 'ahorro_deuda']
+        && isValidString(data.category, 1, 50)
+        && (data.amount is int || data.amount is float)
+        && data.amount > 0 && data.amount <= 1000000000
+        && isValidString(data.note, 0, 140)
+        && data.createdAt is timestamp;
+    }
+
+    function isValidSupportContact(data, uid) {
+      return data.keys().hasAll([
+          'ownerId', 'name', 'relation', 'phone', 'note', 'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerId', 'name', 'relation', 'phone', 'note', 'createdAt'
+        ])
+        && data.ownerId == uid
+        && isValidString(data.name, 1, 60)
+        && isValidString(data.relation, 0, 40)
+        && isValidString(data.phone, 0, 30)
+        && isValidString(data.note, 0, 160)
+        && data.createdAt is timestamp;
+    }
+
+    function isValidRelationshipLog(data, uid) {
+      return data.keys().hasAll([
+          'ownerId', 'date', 'personName', 'actionType', 'summary', 'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerId', 'date', 'personName', 'actionType', 'summary', 'createdAt'
+        ])
+        && data.ownerId == uid
+        && isValidString(data.date, 8, 16)
+        && isValidString(data.personName, 1, 50)
+        && data.actionType in ['conversacion', 'limite_sano', 'reparacion', 'tiempo_calidad']
+        && isValidString(data.summary, 1, 240)
+        && data.createdAt is timestamp;
+    }
+
+    function isValidLifeGoal(data, uid) {
+      return data.keys().hasAll([
+          'ownerId', 'title', 'area', 'targetDate', 'progress', 'nextStep', 'completed', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerId', 'title', 'area', 'targetDate', 'progress', 'nextStep', 'completed', 'createdAt', 'updatedAt'
+        ])
+        && data.ownerId == uid
+        && isValidString(data.title, 1, 90)
+        && data.area in ['Salud', 'Trabajo y estudio', 'Hogar', 'Propósito', 'Finanzas']
+        && isValidString(data.targetDate, 4, 20)
+        && data.progress is int && data.progress >= 0 && data.progress <= 100
+        && isValidString(data.nextStep, 0, 120)
+        && data.completed is bool
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidAIMessage(data, uid) {
+      return data.keys().hasAll([
+          'ownerId', 'role', 'content', 'crisisDetected', 'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerId', 'role', 'content', 'crisisDetected', 'crisisType', 'createdAt'
+        ])
+        && data.ownerId == uid
+        && data.role in ['user', 'assistant']
+        && isValidString(data.content, 1, 4000)
+        && data.crisisDetected is bool
+        && (!('crisisType' in data) || data.crisisType == null || isValidString(data.crisisType, 1, 32))
+        && data.createdAt is timestamp;
+    }
+
+    function isValidCommunityPost(data) {
+      return data.keys().hasAll([
+          'authorUid', 'authorAlias', 'category', 'content',
+          'supportCount', 'reportCount', 'hidden', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'authorUid', 'authorAlias', 'category', 'content',
+          'supportCount', 'reportCount', 'hidden', 'createdAt', 'updatedAt'
+        ])
+        && isValidId(data.authorUid)
+        && isValidString(data.authorAlias, 2, 40)
+        && data.category in ['logros', 'apoyo', 'estrategias']
+        && isValidString(data.content, 8, 800)
+        && data.supportCount is int && data.supportCount >= 0 && data.supportCount <= 1000000
+        && data.reportCount is int && data.reportCount >= 0 && data.reportCount <= 1000000
+        && data.hidden is bool
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidCommunityReply(data, postId) {
+      return data.keys().hasAll([
+          'postId', 'authorUid', 'authorAlias', 'content', 'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'postId', 'authorUid', 'authorAlias', 'content', 'createdAt'
+        ])
+        && data.postId == postId
+        && isValidId(data.postId)
+        && isValidId(data.authorUid)
+        && isValidString(data.authorAlias, 2, 40)
+        && isValidString(data.content, 3, 500)
+        && data.createdAt is timestamp;
+    }
+
+    function isValidCommunityReaction(data, postId, reactionUid) {
+      return data.keys().hasAll([
+          'postId', 'ownerId', 'reactionType', 'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'postId', 'ownerId', 'reactionType', 'createdAt'
+        ])
+        && data.postId == postId
+        && isValidId(data.postId)
+        && data.ownerId == reactionUid
+        && isValidId(data.ownerId)
+        && data.reactionType == 'apoyo'
+        && data.createdAt is timestamp;
+    }
+
+    function isValidCommunityReport(data, postId, reportUid) {
+      return data.keys().hasAll([
+          'postId', 'ownerId', 'reason', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'postId', 'ownerId', 'reason', 'createdAt', 'updatedAt'
+        ])
+        && data.postId == postId
+        && isValidId(data.postId)
+        && data.ownerId == reportUid
+        && isValidId(data.ownerId)
+        && isValidString(data.reason, 1, 200)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    // --- Collection Match Rules ---
+    match /users/{userId} {
+      allow get: if isValidId(userId) && isOwner(userId);
+      allow create: if isValidId(userId)
+        && isOwner(userId)
+        && isValidUserProfile(incoming(), userId)
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isValidId(userId)
+        && isOwner(userId)
+        && isValidUserProfile(incoming(), userId)
+        && incoming().uid == existing().uid
+        && incoming().email == existing().email
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          incoming().diff(existing()).affectedKeys().hasOnly(['alias', 'focus', 'dailySpendEstimate', 'currency', 'personalMotto', 'updatedAt'])
+          || incoming().diff(existing()).affectedKeys().hasOnly(['recoveryStartDate', 'updatedAt'])
+        );
+      allow delete: if isValidId(userId) && isOwner(userId);
+
+      match /plan/{planId} {
+        allow get: if isValidId(userId) && isValidId(planId) && isOwner(userId);
+        allow list: if isValidId(userId) && isOwner(userId) && existing().ownerId == request.auth.uid;
+        allow create: if isValidId(userId) && isValidId(planId) && isOwner(userId)
+          && isValidUserPlan(incoming(), userId)
+          && incoming().updatedAt == request.time
+          && userExists(userId);
+        allow update: if isValidId(userId) && isValidId(planId) && isOwner(userId)
+          && isValidUserPlan(incoming(), userId)
+          && incoming().ownerId == existing().ownerId
+          && incoming().updatedAt == request.time
+          && userExists(userId)
+          && (
+            incoming().diff(existing()).affectedKeys().hasOnly(['reasonsToChange', 'updatedAt'])
+            || incoming().diff(existing()).affectedKeys().hasOnly(['coreValues', 'updatedAt'])
+            || incoming().diff(existing()).affectedKeys().hasOnly(['triggers', 'updatedAt'])
+            || incoming().diff(existing()).affectedKeys().hasOnly(['warningSigns', 'updatedAt'])
+            || incoming().diff(existing()).affectedKeys().hasOnly(['copingStrategies', 'updatedAt'])
+            || incoming().diff(existing()).affectedKeys().hasOnly(['haltChecklistLastCheckedAt', 'updatedAt'])
+            || incoming().diff(existing()).affectedKeys().hasOnly(['blockedCommunityAliases', 'updatedAt'])
+          );
+        allow delete: if isValidId(userId) && isValidId(planId) && isOwner(userId);
+      }
+
+      match /assessment/{assessmentId} {
+        allow get: if isValidId(userId) && isValidId(assessmentId) && isOwner(userId);
+        allow list: if isValidId(userId) && isOwner(userId) && existing().ownerId == request.auth.uid;
+        allow create: if isValidId(userId) && isValidId(assessmentId) && isOwner(userId)
+          && isValidInitialAssessment(incoming(), userId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time
+          && userExists(userId);
+        allow update: if isValidId(userId) && isValidId(assessmentId) && isOwner(userId)
+          && isValidInitialAssessment(incoming(), userId)
+          && incoming().ownerId == existing().ownerId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && userExists(userId)
+          && incoming().diff(existing()).affectedKeys().hasOnly([
+            'primaryFocus', 'secondaryAreas', 'frequencyLevel', 'severityScore',
+            'readinessScore', 'highRiskTimes', 'mainTriggers', 'supportLevel',
+            'clinicalAttentionFlag', 'notes', 'completedAt', 'updatedAt'
+          ]);
+        allow delete: if isValidId(userId) && isValidId(assessmentId) && isOwner(userId);
+      }
+
+      match /emotionalLogs/{logId} {
+        allow get: if isValidId(userId) && isValidId(logId) && isOwner(userId);
+        allow list: if isValidId(userId) && isOwner(userId) && existing().ownerId == request.auth.uid;
+        allow create: if isValidId(userId) && isValidId(logId) && isOwner(userId)
+          && isValidEmotionalLog(incoming(), userId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time
+          && userExists(userId);
+        allow update: if isValidId(userId) && isValidId(logId) && isOwner(userId)
+          && isValidEmotionalLog(incoming(), userId)
+          && incoming().ownerId == existing().ownerId
+          && incoming().createdAt == existing().createdAt
+          && incoming().date == existing().date
+          && incoming().updatedAt == request.time
+          && userExists(userId)
+          && incoming().diff(existing()).affectedKeys().hasOnly(['mood', 'energyLevel', 'stressLevel', 'note', 'updatedAt']);
+        allow delete: if isValidId(userId) && isValidId(logId) && isOwner(userId);
+      }
+
+      match /cravingLogs/{logId} {
+        allow get: if isValidId(userId) && isValidId(logId) && isOwner(userId);
+        allow list: if isValidId(userId) && isOwner(userId) && existing().ownerId == request.auth.uid;
+        allow create: if isValidId(userId) && isValidId(logId) && isOwner(userId)
+          && isValidCravingLog(incoming(), userId)
+          && incoming().createdAt == request.time
+          && userExists(userId);
+        allow delete: if isValidId(userId) && isValidId(logId) && isOwner(userId);
+      }
+
+      match /consumptionLogs/{logId} {
+        allow get: if isValidId(userId) && isValidId(logId) && isOwner(userId);
+        allow list: if isValidId(userId) && isOwner(userId) && existing().ownerId == request.auth.uid;
+        allow create: if isValidId(userId) && isValidId(logId) && isOwner(userId)
+          && isValidConsumptionLog(incoming(), userId)
+          && incoming().createdAt == request.time
+          && userExists(userId);
+        allow delete: if isValidId(userId) && isValidId(logId) && isOwner(userId);
+      }
+
+      match /dailyPlan/{itemId} {
+        allow get: if isValidId(userId) && isValidId(itemId) && isOwner(userId);
+        allow list: if isValidId(userId) && isOwner(userId) && existing().ownerId == request.auth.uid;
+        allow create: if isValidId(userId) && isValidId(itemId) && isOwner(userId)
+          && isValidDailyPlanItem(incoming(), userId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time
+          && userExists(userId);
+        allow update: if isValidId(userId) && isValidId(itemId) && isOwner(userId)
+          && isValidDailyPlanItem(incoming(), userId)
+          && incoming().ownerId == existing().ownerId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && userExists(userId)
+          && (
+            incoming().diff(existing()).affectedKeys().hasOnly(['completedDates', 'updatedAt'])
+            || incoming().diff(existing()).affectedKeys().hasOnly(['title', 'timeBlock', 'category', 'active', 'updatedAt'])
+          );
+        allow delete: if isValidId(userId) && isValidId(itemId) && isOwner(userId);
+      }
+
+      match /journalEntries/{entryId} {
+        allow get: if isValidId(userId) && isValidId(entryId) && isOwner(userId);
+        allow list: if isValidId(userId) && isOwner(userId) && existing().ownerId == request.auth.uid;
+        allow create: if isValidId(userId) && isValidId(entryId) && isOwner(userId)
+          && isValidJournalEntry(incoming(), userId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time
+          && userExists(userId);
+        allow update: if isValidId(userId) && isValidId(entryId) && isOwner(userId)
+          && isValidJournalEntry(incoming(), userId)
+          && incoming().ownerId == existing().ownerId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && userExists(userId)
+          && incoming().diff(existing()).affectedKeys().hasOnly([
+            'date', 'title', 'mood', 'energyLevel', 'stressLevel',
+            'content', 'gratitude', 'triggersNoticed', 'updatedAt'
+          ]);
+        allow delete: if isValidId(userId) && isValidId(entryId) && isOwner(userId);
+      }
+
+      match /alerts/{alertId} {
+        allow get: if isValidId(userId) && isValidId(alertId) && isOwner(userId);
+        allow list: if isValidId(userId) && isOwner(userId) && existing().ownerId == request.auth.uid;
+        allow create: if isValidId(userId) && isValidId(alertId) && isOwner(userId)
+          && isValidRelapseAlert(incoming(), userId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time
+          && userExists(userId);
+        allow update: if isValidId(userId) && isValidId(alertId) && isOwner(userId)
+          && isValidRelapseAlert(incoming(), userId)
+          && incoming().ownerId == existing().ownerId
+          && incoming().createdAt == existing().createdAt
+          && incoming().ruleKey == existing().ruleKey
+          && incoming().updatedAt == request.time
+          && userExists(userId)
+          && incoming().diff(existing()).affectedKeys().hasOnly(['acknowledged', 'resolved', 'updatedAt']);
+        allow delete: if isValidId(userId) && isValidId(alertId) && isOwner(userId);
+      }
+
+      match /recoveryStages/{stageId} {
+        allow get: if isValidId(userId) && isValidId(stageId) && isOwner(userId);
+        allow list: if isValidId(userId) && isOwner(userId) && existing().ownerId == request.auth.uid;
+        allow create: if isValidId(userId) && isValidId(stageId) && isOwner(userId)
+          && isValidRecoveryStage(incoming(), userId)
+          && incoming().createdAt == request.time
+          && userExists(userId);
+        allow delete: if isValidId(userId) && isValidId(stageId) && isOwner(userId);
+      }
+
+      match /habits/{habitId} {
+        allow get: if isValidId(userId) && isValidId(habitId) && isOwner(userId);
+        allow list: if isValidId(userId) && isOwner(userId) && existing().ownerId == request.auth.uid;
+        allow create: if isValidId(userId) && isValidId(habitId) && isOwner(userId)
+          && isValidHabitItem(incoming(), userId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time
+          && userExists(userId);
+        allow update: if isValidId(userId) && isValidId(habitId) && isOwner(userId)
+          && isValidHabitItem(incoming(), userId)
+          && incoming().ownerId == existing().ownerId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && userExists(userId)
+          && incoming().diff(existing()).affectedKeys().hasOnly(['completedDates', 'updatedAt']);
+        allow delete: if isValidId(userId) && isValidId(habitId) && isOwner(userId);
+      }
+
+      match /financeEntries/{entryId} {
+        allow get: if isValidId(userId) && isValidId(entryId) && isOwner(userId);
+        allow list: if isValidId(userId) && isOwner(userId) && existing().ownerId == request.auth.uid;
+        allow create: if isValidId(userId) && isValidId(entryId) && isOwner(userId)
+          && isValidFinanceEntry(incoming(), userId)
+          && incoming().createdAt == request.time
+          && userExists(userId);
+        allow delete: if isValidId(userId) && isValidId(entryId) && isOwner(userId);
+      }
+
+      match /supportContacts/{contactId} {
+        allow get: if isValidId(userId) && isValidId(contactId) && isOwner(userId);
+        allow list: if isValidId(userId) && isOwner(userId) && existing().ownerId == request.auth.uid;
+        allow create: if isValidId(userId) && isValidId(contactId) && isOwner(userId)
+          && isValidSupportContact(incoming(), userId)
+          && incoming().createdAt == request.time
+          && userExists(userId);
+        allow delete: if isValidId(userId) && isValidId(contactId) && isOwner(userId);
+      }
+
+      match /relationshipLogs/{logId} {
+        allow get: if isValidId(userId) && isValidId(logId) && isOwner(userId);
+        allow list: if isValidId(userId) && isOwner(userId) && existing().ownerId == request.auth.uid;
+        allow create: if isValidId(userId) && isValidId(logId) && isOwner(userId)
+          && isValidRelationshipLog(incoming(), userId)
+          && incoming().createdAt == request.time
+          && userExists(userId);
+        allow delete: if isValidId(userId) && isValidId(logId) && isOwner(userId);
+      }
+
+      match /lifeGoals/{goalId} {
+        allow get: if isValidId(userId) && isValidId(goalId) && isOwner(userId);
+        allow list: if isValidId(userId) && isOwner(userId) && existing().ownerId == request.auth.uid;
+        allow create: if isValidId(userId) && isValidId(goalId) && isOwner(userId)
+          && isValidLifeGoal(incoming(), userId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time
+          && userExists(userId);
+        allow update: if isValidId(userId) && isValidId(goalId) && isOwner(userId)
+          && isValidLifeGoal(incoming(), userId)
+          && incoming().ownerId == existing().ownerId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && userExists(userId)
+          && incoming().diff(existing()).affectedKeys().hasOnly(['progress', 'completed', 'updatedAt']);
+        allow delete: if isValidId(userId) && isValidId(goalId) && isOwner(userId);
+      }
+
+      match /aiMessages/{messageId} {
+        allow get: if isValidId(userId) && isValidId(messageId) && isOwner(userId);
+        allow list: if isValidId(userId) && isOwner(userId) && existing().ownerId == request.auth.uid;
+        allow create: if isValidId(userId) && isValidId(messageId) && isOwner(userId)
+          && isValidAIMessage(incoming(), userId)
+          && incoming().createdAt == request.time
+          && userExists(userId);
+        allow delete: if isValidId(userId) && isValidId(messageId) && isOwner(userId);
+      }
+    }
+
+    // --- Alias-Only Moderated Community Collections ---
+    match /communityPosts/{postId} {
+      allow get: if isValidId(postId)
+        && isVerified()
+        && (existing().hidden == false || existing().authorUid == request.auth.uid);
+      allow list: if isVerified() && (existing().hidden == false || existing().authorUid == request.auth.uid);
+      allow create: if isValidId(postId)
+        && isVerified()
+        && isValidCommunityPost(incoming())
+        && incoming().authorUid == request.auth.uid
+        && incoming().supportCount == 0
+        && incoming().reportCount == 0
+        && incoming().hidden == false
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && userExists(request.auth.uid)
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.alias == incoming().authorAlias;
+      allow update: if isValidId(postId)
+        && isVerified()
+        && isValidCommunityPost(incoming())
+        && incoming().authorUid == existing().authorUid
+        && incoming().authorAlias == existing().authorAlias
+        && incoming().category == existing().category
+        && incoming().content == existing().content
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          // Action 1: Add support reaction atomically with reactions/{uid} create
+          (
+            incoming().diff(existing()).affectedKeys().hasOnly(['supportCount', 'updatedAt'])
+            && existing().hidden == false
+            && incoming().supportCount == existing().supportCount + 1
+            && !exists(/databases/$(database)/documents/communityPosts/$(postId)/reactions/$(request.auth.uid))
+            && existsAfter(/databases/$(database)/documents/communityPosts/$(postId)/reactions/$(request.auth.uid))
+          )
+          // Action 2: Remove own support reaction atomically with reactions/{uid} delete
+          || (
+            incoming().diff(existing()).affectedKeys().hasOnly(['supportCount', 'updatedAt'])
+            && existing().hidden == false
+            && incoming().supportCount == existing().supportCount - 1
+            && incoming().supportCount >= 0
+            && exists(/databases/$(database)/documents/communityPosts/$(postId)/reactions/$(request.auth.uid))
+            && !existsAfter(/databases/$(database)/documents/communityPosts/$(postId)/reactions/$(request.auth.uid))
+          )
+          // Action 3: Add moderation report atomically with reports/{uid} create
+          || (
+            incoming().diff(existing()).affectedKeys().hasOnly(['reportCount', 'hidden', 'updatedAt'])
+            && incoming().reportCount == existing().reportCount + 1
+            && incoming().hidden == (incoming().reportCount >= 2 || existing().hidden)
+            && !exists(/databases/$(database)/documents/communityPosts/$(postId)/reports/$(request.auth.uid))
+            && existsAfter(/databases/$(database)/documents/communityPosts/$(postId)/reports/$(request.auth.uid))
+          )
+          // Action 4: Withdraw own moderation report atomically with reports/{uid} delete
+          || (
+            incoming().diff(existing()).affectedKeys().hasOnly(['reportCount', 'hidden', 'updatedAt'])
+            && incoming().reportCount == existing().reportCount - 1
+            && incoming().reportCount >= 0
+            && incoming().hidden == (incoming().reportCount >= 2)
+            && exists(/databases/$(database)/documents/communityPosts/$(postId)/reports/$(request.auth.uid))
+            && !existsAfter(/databases/$(database)/documents/communityPosts/$(postId)/reports/$(request.auth.uid))
+          )
+        );
+      allow delete: if isValidId(postId) && isVerified() && existing().authorUid == request.auth.uid;
+
+      match /replies/{replyId} {
+        allow get: if isValidId(postId) && isValidId(replyId) && isVerified();
+        allow list: if isValidId(postId) && isVerified() && existing().postId == postId;
+        allow create: if isValidId(postId)
+          && isValidId(replyId)
+          && isVerified()
+          && isValidCommunityReply(incoming(), postId)
+          && incoming().authorUid == request.auth.uid
+          && incoming().createdAt == request.time
+          && exists(/databases/$(database)/documents/communityPosts/$(postId))
+          && get(/databases/$(database)/documents/communityPosts/$(postId)).data.hidden == false
+          && userExists(request.auth.uid)
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.alias == incoming().authorAlias;
+        allow update: if false;
+        allow delete: if isValidId(postId)
+          && isValidId(replyId)
+          && isVerified()
+          && existing().authorUid == request.auth.uid;
+      }
+
+      match /reactions/{reactionUid} {
+        allow get: if isValidId(postId) && isValidId(reactionUid) && isOwner(reactionUid);
+        allow list: if isValidId(postId) && isVerified() && existing().ownerId == request.auth.uid;
+        allow create: if isValidId(postId)
+          && isValidId(reactionUid)
+          && isOwner(reactionUid)
+          && isValidCommunityReaction(incoming(), postId, reactionUid)
+          && incoming().createdAt == request.time
+          && exists(/databases/$(database)/documents/communityPosts/$(postId))
+          && getAfter(/databases/$(database)/documents/communityPosts/$(postId)).data.supportCount
+            == get(/databases/$(database)/documents/communityPosts/$(postId)).data.supportCount + 1;
+        allow update: if false;
+        allow delete: if isValidId(postId)
+          && isValidId(reactionUid)
+          && isOwner(reactionUid)
+          && exists(/databases/$(database)/documents/communityPosts/$(postId))
+          && getAfter(/databases/$(database)/documents/communityPosts/$(postId)).data.supportCount
+            == get(/databases/$(database)/documents/communityPosts/$(postId)).data.supportCount - 1;
+      }
+
+      match /reports/{reportUid} {
+        allow get: if isValidId(postId) && isValidId(reportUid) && isOwner(reportUid);
+        allow list: if isValidId(postId) && isVerified() && existing().ownerId == request.auth.uid;
+        allow create: if isValidId(postId)
+          && isValidId(reportUid)
+          && isOwner(reportUid)
+          && isValidCommunityReport(incoming(), postId, reportUid)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time
+          && exists(/databases/$(database)/documents/communityPosts/$(postId))
+          && getAfter(/databases/$(database)/documents/communityPosts/$(postId)).data.reportCount
+            == get(/databases/$(database)/documents/communityPosts/$(postId)).data.reportCount + 1;
+        allow update: if isValidId(postId)
+          && isValidId(reportUid)
+          && isOwner(reportUid)
+          && isValidCommunityReport(incoming(), postId, reportUid)
+          && incoming().postId == existing().postId
+          && incoming().ownerId == existing().ownerId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && incoming().diff(existing()).affectedKeys().hasOnly(['reason', 'updatedAt']);
+        allow delete: if isValidId(postId)
+          && isValidId(reportUid)
+          && isOwner(reportUid)
+          && exists(/databases/$(database)/documents/communityPosts/$(postId))
+          && getAfter(/databases/$(database)/documents/communityPosts/$(postId)).data.reportCount
+            == get(/databases/$(database)/documents/communityPosts/$(postId)).data.reportCount - 1;
+      }
+    }
+  }
+}

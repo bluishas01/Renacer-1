@@ -1,0 +1,535 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Private recovery profile and informed consent record belonging strictly to a single authenticated user.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "email": { "type": "string", "format": "email", "maxLength": 160 },
+        "alias": { "type": "string", "minLength": 2, "maxLength": 40 },
+        "focus": {
+          "type": "string",
+          "enum": [
+            "Alcohol",
+            "Sustancias",
+            "Apuestas y juego",
+            "Tabaco o nicotina",
+            "Conductas compulsivas",
+            "Reconstrucción integral"
+          ],
+          "maxLength": 60
+        },
+        "recoveryStartDate": { "type": "string", "maxLength": 40 },
+        "dailySpendEstimate": { "type": "number" },
+        "currency": { "type": "string", "minLength": 1, "maxLength": 6 },
+        "personalMotto": { "type": "string", "maxLength": 80 },
+        "consentAcceptedAt": { "type": "string", "maxLength": 40 },
+        "consentVersion": { "type": "string", "maxLength": 24 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "uid",
+        "email",
+        "alias",
+        "focus",
+        "recoveryStartDate",
+        "dailySpendEstimate",
+        "currency",
+        "personalMotto",
+        "consentAcceptedAt",
+        "consentVersion",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "UserPlan": {
+      "title": "UserPlan",
+      "description": "User's private recovery plan, coping strategies, and blocked community aliases.",
+      "type": "object",
+      "properties": {
+        "ownerId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "reasonsToChange": { "type": "array" },
+        "coreValues": { "type": "array" },
+        "triggers": { "type": "array" },
+        "warningSigns": { "type": "array" },
+        "copingStrategies": { "type": "array" },
+        "haltChecklistLastCheckedAt": { "type": "string", "maxLength": 40 },
+        "blockedCommunityAliases": { "type": "array" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "ownerId",
+        "reasonsToChange",
+        "coreValues",
+        "triggers",
+        "warningSigns",
+        "copingStrategies",
+        "blockedCommunityAliases",
+        "updatedAt"
+      ]
+    },
+    "InitialAssessment": {
+      "title": "InitialAssessment",
+      "description": "Structured initial recovery evaluation capturing baseline severity, high-risk contexts, support level, and readiness.",
+      "type": "object",
+      "properties": {
+        "ownerId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "primaryFocus": {
+          "type": "string",
+          "enum": [
+            "Alcohol",
+            "Sustancias",
+            "Apuestas y juego",
+            "Tabaco o nicotina",
+            "Conductas compulsivas",
+            "Reconstrucción integral"
+          ],
+          "maxLength": 60
+        },
+        "secondaryAreas": { "type": "array" },
+        "frequencyLevel": {
+          "type": "string",
+          "enum": ["diaria", "semanal", "episodica", "en_abstinencia"],
+          "maxLength": 24
+        },
+        "severityScore": { "type": "integer" },
+        "readinessScore": { "type": "integer" },
+        "highRiskTimes": { "type": "array" },
+        "mainTriggers": { "type": "array" },
+        "supportLevel": {
+          "type": "string",
+          "enum": ["alto", "moderado", "bajo", "aislado"],
+          "maxLength": 20
+        },
+        "clinicalAttentionFlag": { "type": "boolean" },
+        "notes": { "type": "string", "maxLength": 500 },
+        "completedAt": { "type": "string", "maxLength": 40 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "ownerId",
+        "primaryFocus",
+        "secondaryAreas",
+        "frequencyLevel",
+        "severityScore",
+        "readinessScore",
+        "highRiskTimes",
+        "mainTriggers",
+        "supportLevel",
+        "clinicalAttentionFlag",
+        "notes",
+        "completedAt",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "EmotionalLog": {
+      "title": "EmotionalLog",
+      "description": "Daily emotional check-in entry owned by a user.",
+      "type": "object",
+      "properties": {
+        "ownerId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "date": { "type": "string", "maxLength": 16, "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+        "mood": {
+          "type": "string",
+          "enum": ["Tranquilo", "Esperanzado", "Cansado", "Ansioso", "Vulnerable", "Abrumado"],
+          "maxLength": 32
+        },
+        "energyLevel": { "type": "integer" },
+        "stressLevel": { "type": "integer" },
+        "note": { "type": "string", "maxLength": 400 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["ownerId", "date", "mood", "energyLevel", "stressLevel", "note", "createdAt", "updatedAt"]
+    },
+    "CravingLog": {
+      "title": "CravingLog",
+      "description": "Craving or urge log owned by a user.",
+      "type": "object",
+      "properties": {
+        "ownerId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "intensity": { "type": "integer" },
+        "trigger": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "toolUsed": { "type": "string", "maxLength": 120 },
+        "outcome": { "type": "string", "enum": ["superado", "en_proceso", "recaida"], "maxLength": 20 },
+        "note": { "type": "string", "maxLength": 400 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["ownerId", "intensity", "trigger", "toolUsed", "outcome", "note", "createdAt"]
+    },
+    "ConsumptionLog": {
+      "title": "ConsumptionLog",
+      "description": "Detailed private log of cravings, substance consumption, gambling episodes, or relapses.",
+      "type": "object",
+      "properties": {
+        "ownerId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "entryType": { "type": "string", "enum": ["deseo", "consumo", "apuesta", "recaida"], "maxLength": 20 },
+        "category": { "type": "string", "minLength": 1, "maxLength": 60 },
+        "intensity": { "type": "integer" },
+        "amountSpent": { "type": "number" },
+        "trigger": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "locationContext": { "type": "string", "maxLength": 80 },
+        "copingAction": { "type": "string", "maxLength": 120 },
+        "resetApplied": { "type": "boolean" },
+        "occurredAt": { "type": "string", "maxLength": 40 },
+        "note": { "type": "string", "maxLength": 500 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "ownerId",
+        "entryType",
+        "category",
+        "intensity",
+        "amountSpent",
+        "trigger",
+        "locationContext",
+        "copingAction",
+        "resetApplied",
+        "occurredAt",
+        "note",
+        "createdAt"
+      ]
+    },
+    "DailyPlanItem": {
+      "title": "DailyPlanItem",
+      "description": "Structured daily recovery routine action organized by time block.",
+      "type": "object",
+      "properties": {
+        "ownerId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "title": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "timeBlock": { "type": "string", "enum": ["manana", "tarde", "noche"], "maxLength": 16 },
+        "category": { "type": "string", "enum": ["anclaje", "autocuidado", "prevencion", "conexion"], "maxLength": 24 },
+        "completedDates": { "type": "array" },
+        "active": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["ownerId", "title", "timeBlock", "category", "completedDates", "active", "createdAt", "updatedAt"]
+    },
+    "JournalEntry": {
+      "title": "JournalEntry",
+      "description": "Private personal recovery journal and emotional reflection entry.",
+      "type": "object",
+      "properties": {
+        "ownerId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "date": { "type": "string", "maxLength": 16, "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+        "title": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "mood": {
+          "type": "string",
+          "enum": ["Tranquilo", "Esperanzado", "Cansado", "Ansioso", "Vulnerable", "Abrumado"],
+          "maxLength": 32
+        },
+        "energyLevel": { "type": "integer" },
+        "stressLevel": { "type": "integer" },
+        "content": { "type": "string", "minLength": 1, "maxLength": 2000 },
+        "gratitude": { "type": "string", "maxLength": 400 },
+        "triggersNoticed": { "type": "string", "maxLength": 240 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "ownerId",
+        "date",
+        "title",
+        "mood",
+        "energyLevel",
+        "stressLevel",
+        "content",
+        "gratitude",
+        "triggersNoticed",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "RelapseAlert": {
+      "title": "RelapseAlert",
+      "description": "Proactive relapse prevention alert and user acknowledgment record.",
+      "type": "object",
+      "properties": {
+        "ownerId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "ruleKey": { "type": "string", "minLength": 1, "maxLength": 60 },
+        "severity": { "type": "string", "enum": ["baja", "media", "alta"], "maxLength": 16 },
+        "title": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "message": { "type": "string", "minLength": 1, "maxLength": 400 },
+        "recommendedAction": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "acknowledged": { "type": "boolean" },
+        "resolved": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "ownerId",
+        "ruleKey",
+        "severity",
+        "title",
+        "message",
+        "recommendedAction",
+        "acknowledged",
+        "resolved",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "RecoveryStage": {
+      "title": "RecoveryStage",
+      "description": "Archived compassionate recovery stage record.",
+      "type": "object",
+      "properties": {
+        "ownerId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "startedAt": { "type": "string", "maxLength": 40 },
+        "endedAt": { "type": "string", "maxLength": 40 },
+        "daysCompleted": { "type": "integer" },
+        "reflection": { "type": "string", "maxLength": 400 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["ownerId", "startedAt", "endedAt", "daysCompleted", "reflection", "createdAt"]
+    },
+    "HabitItem": {
+      "title": "HabitItem",
+      "description": "Daily wellness habit tracked by a user.",
+      "type": "object",
+      "properties": {
+        "ownerId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "title": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "category": { "type": "string", "enum": ["descanso", "cuerpo", "mente", "entorno"], "maxLength": 20 },
+        "completedDates": { "type": "array" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["ownerId", "title", "category", "completedDates", "createdAt", "updatedAt"]
+    },
+    "FinanceEntry": {
+      "title": "FinanceEntry",
+      "description": "Personal finance stability ledger entry.",
+      "type": "object",
+      "properties": {
+        "ownerId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "date": { "type": "string", "maxLength": 16 },
+        "type": { "type": "string", "enum": ["ingreso", "gasto", "ahorro_deuda"], "maxLength": 20 },
+        "category": { "type": "string", "minLength": 1, "maxLength": 50 },
+        "amount": { "type": "number" },
+        "note": { "type": "string", "maxLength": 140 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["ownerId", "date", "type", "category", "amount", "note", "createdAt"]
+    },
+    "SupportContact": {
+      "title": "SupportContact",
+      "description": "Personal support circle contact belonging to a user.",
+      "type": "object",
+      "properties": {
+        "ownerId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 60 },
+        "relation": { "type": "string", "maxLength": 40 },
+        "phone": { "type": "string", "maxLength": 30 },
+        "note": { "type": "string", "maxLength": 160 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["ownerId", "name", "relation", "phone", "note", "createdAt"]
+    },
+    "RelationshipLog": {
+      "title": "RelationshipLog",
+      "description": "Restorative communication and healthy boundary log entry.",
+      "type": "object",
+      "properties": {
+        "ownerId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "date": { "type": "string", "maxLength": 16 },
+        "personName": { "type": "string", "minLength": 1, "maxLength": 50 },
+        "actionType": {
+          "type": "string",
+          "enum": ["conversacion", "limite_sano", "reparacion", "tiempo_calidad"],
+          "maxLength": 24
+        },
+        "summary": { "type": "string", "minLength": 1, "maxLength": 240 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["ownerId", "date", "personName", "actionType", "summary", "createdAt"]
+    },
+    "LifeGoal": {
+      "title": "LifeGoal",
+      "description": "Personal life-reconstruction goal with progress.",
+      "type": "object",
+      "properties": {
+        "ownerId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "title": { "type": "string", "minLength": 1, "maxLength": 90 },
+        "area": {
+          "type": "string",
+          "enum": ["Salud", "Trabajo y estudio", "Hogar", "Propósito", "Finanzas"],
+          "maxLength": 30
+        },
+        "targetDate": { "type": "string", "maxLength": 20 },
+        "progress": { "type": "integer" },
+        "nextStep": { "type": "string", "maxLength": 120 },
+        "completed": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["ownerId", "title", "area", "targetDate", "progress", "nextStep", "completed", "createdAt", "updatedAt"]
+    },
+    "AIMessage": {
+      "title": "AIMessage",
+      "description": "Private RENACER IA conversation message owned by a user.",
+      "type": "object",
+      "properties": {
+        "ownerId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "role": { "type": "string", "enum": ["user", "assistant"], "maxLength": 16 },
+        "content": { "type": "string", "minLength": 1, "maxLength": 4000 },
+        "crisisDetected": { "type": "boolean" },
+        "crisisType": { "type": "string", "maxLength": 32 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["ownerId", "role", "content", "crisisDetected", "createdAt"]
+    },
+    "CommunityPost": {
+      "title": "CommunityPost",
+      "description": "Alias-only moderated community recovery post without PII.",
+      "type": "object",
+      "properties": {
+        "authorUid": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "authorAlias": { "type": "string", "minLength": 2, "maxLength": 40 },
+        "category": { "type": "string", "enum": ["logros", "apoyo", "estrategias"], "maxLength": 20 },
+        "content": { "type": "string", "minLength": 8, "maxLength": 800 },
+        "supportCount": { "type": "integer" },
+        "reportCount": { "type": "integer" },
+        "hidden": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "authorUid",
+        "authorAlias",
+        "category",
+        "content",
+        "supportCount",
+        "reportCount",
+        "hidden",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "CommunityReply": {
+      "title": "CommunityReply",
+      "description": "Alias-only reply to a community post.",
+      "type": "object",
+      "properties": {
+        "postId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "authorUid": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "authorAlias": { "type": "string", "minLength": 2, "maxLength": 40 },
+        "content": { "type": "string", "minLength": 3, "maxLength": 500 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["postId", "authorUid", "authorAlias", "content", "createdAt"]
+    },
+    "CommunityReaction": {
+      "title": "CommunityReaction",
+      "description": "Per-user support reaction keyed by user UID so only the owner can create or remove it.",
+      "type": "object",
+      "properties": {
+        "postId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "ownerId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "reactionType": { "type": "string", "enum": ["apoyo"], "maxLength": 16 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["postId", "ownerId", "reactionType", "createdAt"]
+    },
+    "CommunityReport": {
+      "title": "CommunityReport",
+      "description": "Per-user moderation report keyed by user UID so only the owner can view or modify it.",
+      "type": "object",
+      "properties": {
+        "postId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "ownerId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "reason": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["postId", "ownerId", "reason", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Private user recovery profile and informed consent metadata"
+    },
+    "/users/{userId}/plan/{planId}": {
+      "schema": { "$ref": "#/entities/UserPlan" },
+      "description": "Private user recovery plan and safety triggers"
+    },
+    "/users/{userId}/assessment/{assessmentId}": {
+      "schema": { "$ref": "#/entities/InitialAssessment" },
+      "description": "Private structured initial recovery evaluation"
+    },
+    "/users/{userId}/emotionalLogs/{logId}": {
+      "schema": { "$ref": "#/entities/EmotionalLog" },
+      "description": "Private daily emotional check-ins"
+    },
+    "/users/{userId}/cravingLogs/{logId}": {
+      "schema": { "$ref": "#/entities/CravingLog" },
+      "description": "Private craving and impulse logs"
+    },
+    "/users/{userId}/consumptionLogs/{logId}": {
+      "schema": { "$ref": "#/entities/ConsumptionLog" },
+      "description": "Private consumption, gambling, and relapse logs"
+    },
+    "/users/{userId}/dailyPlan/{itemId}": {
+      "schema": { "$ref": "#/entities/DailyPlanItem" },
+      "description": "Private daily structured recovery routine actions"
+    },
+    "/users/{userId}/journalEntries/{entryId}": {
+      "schema": { "$ref": "#/entities/JournalEntry" },
+      "description": "Private personal recovery journal entries"
+    },
+    "/users/{userId}/alerts/{alertId}": {
+      "schema": { "$ref": "#/entities/RelapseAlert" },
+      "description": "Private relapse prevention alerts and acknowledgment state"
+    },
+    "/users/{userId}/recoveryStages/{stageId}": {
+      "schema": { "$ref": "#/entities/RecoveryStage" },
+      "description": "Private archived recovery stages"
+    },
+    "/users/{userId}/habits/{habitId}": {
+      "schema": { "$ref": "#/entities/HabitItem" },
+      "description": "Private daily wellness habits"
+    },
+    "/users/{userId}/financeEntries/{entryId}": {
+      "schema": { "$ref": "#/entities/FinanceEntry" },
+      "description": "Private financial rebuilding ledger"
+    },
+    "/users/{userId}/supportContacts/{contactId}": {
+      "schema": { "$ref": "#/entities/SupportContact" },
+      "description": "Private support circle contacts"
+    },
+    "/users/{userId}/relationshipLogs/{logId}": {
+      "schema": { "$ref": "#/entities/RelationshipLog" },
+      "description": "Private family and relationship restoration logs"
+    },
+    "/users/{userId}/lifeGoals/{goalId}": {
+      "schema": { "$ref": "#/entities/LifeGoal" },
+      "description": "Private life-reconstruction goals"
+    },
+    "/users/{userId}/aiMessages/{messageId}": {
+      "schema": { "$ref": "#/entities/AIMessage" },
+      "description": "Private RENACER IA conversation history"
+    },
+    "/communityPosts/{postId}": {
+      "schema": { "$ref": "#/entities/CommunityPost" },
+      "description": "Moderated alias-only community recovery posts"
+    },
+    "/communityPosts/{postId}/replies/{replyId}": {
+      "schema": { "$ref": "#/entities/CommunityReply" },
+      "description": "Moderated alias-only community replies"
+    },
+    "/communityPosts/{postId}/reactions/{reactionUid}": {
+      "schema": { "$ref": "#/entities/CommunityReaction" },
+      "description": "Per-user community support reaction isolated by user UID"
+    },
+    "/communityPosts/{postId}/reports/{reportUid}": {
+      "schema": { "$ref": "#/entities/CommunityReport" },
+      "description": "Per-user community report isolated by user UID"
+    }
+  }
+}

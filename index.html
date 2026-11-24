@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>RENACER — Una nueva oportunidad comienza contigo</title>
+    <meta name="description" content="Reconstruye tus hábitos. Recupera el control. Avanza un día a la vez. Acompañamiento privado para recuperación y bienestar personal." />
+    <meta property="og:title" content="RENACER — Una nueva oportunidad comienza contigo" />
+    <meta property="og:description" content="Reconstruye tus hábitos. Recupera el control. Avanza un día a la vez. Acompañamiento privado para recuperación y bienestar personal." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#1B4332" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="RENACER" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  </head>
+  <body class="bg-[#F7F4EC] text-[#14241C] antialiased selection:bg-[#1B4332] selection:text-[#F7F4EC]" style="margin:0;background-color:#F7F4EC;color:#14241C;font-family:-apple-system,BlinkMacSystemFont,'Plus Jakarta Sans',sans-serif;">
+    <div id="root">
+      <div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;">
+        <div style="width:48px;height:48px;border-radius:16px;background-color:#1B4332;color:#F7F4EC;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:20px;">R</div>
+        <p style="margin-top:16px;font-size:17px;font-weight:600;color:#14241C;">Iniciando RENACER...</p>
+        <p style="margin-top:6px;font-size:13px;color:#4C5E54;">Un día a la vez</p>
+      </div>
+    </div>
+    <script>
+      (function () {
+        if (typeof Object.hasOwn !== 'function') {
+          Object.hasOwn = function (obj, prop) {
+            return obj != null && Object.prototype.hasOwnProperty.call(Object(obj), prop);
+          };
+        }
+        function showBootError(detail) {
+          if (window.__RENACER_MOUNTED__) return;
+          var root = document.getElementById('root');
+          if (!root) return;
+          root.innerHTML =
+            '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background-color:#F7F4EC;color:#14241C;font-family:-apple-system,BlinkMacSystemFont,sans-serif;">' +
+              '<div style="width:100%;max-width:420px;background:#FFFFFF;border:1px solid #E3DDD0;border-radius:16px;padding:24px;box-shadow:0 10px 25px rgba(0,0,0,0.06);">' +
+                '<h1 style="margin:0;font-size:20px;font-weight:600;color:#14241C;">No se pudo iniciar RENACER</h1>' +
+                '<p style="margin:10px 0 0;font-size:14px;line-height:1.5;color:#4C5E54;">' +
+                  'Tu navegador no pudo cargar los módulos de arranque. Si estás en Safari o usando una versión en caché previa, limpia la caché y reintenta.' +
+                '</p>' +
+                (detail ? '<p style="margin:10px 0 0;font-size:12px;color:#991B1B;background:#FEF2F2;padding:8px 10px;border-radius:8px;word-break:break-word;">' + String(detail).replace(/[<>]/g, '') + '</p>' : '') +
+                '<button id="renacer-boot-retry" type="button" style="margin-top:16px;width:100%;min-height:44px;border:0;border-radius:12px;background:#1B4332;color:#F7F4EC;font-size:14px;font-weight:600;cursor:pointer;">Reintentar carga</button>' +
+                '<button id="renacer-boot-reset" type="button" style="margin-top:10px;width:100%;min-height:44px;border:1px solid #D5CEBF;border-radius:12px;background:#FAF8F3;color:#14241C;font-size:14px;font-weight:500;cursor:pointer;">Limpiar caché y reintentar</button>' +
+              '</div>' +
+            '</div>';
+          var retryBtn = document.getElementById('renacer-boot-retry');
+          if (retryBtn) retryBtn.onclick = function () { window.location.reload(); };
+          var resetBtn = document.getElementById('renacer-boot-reset');
+          if (resetBtn) {
+            resetBtn.onclick = function () {
+              var p1 = ('serviceWorker' in navigator)
+                ? navigator.serviceWorker.getRegistrations().then(function (regs) {
+                    return Promise.all(regs.map(function (r) { return r.unregister(); }));
+                  })
+                : Promise.resolve();
+              var p2 = ('caches' in window)
+                ? window.caches.keys().then(function (keys) {
+                    return Promise.all(keys.map(function (k) { return window.caches.delete(k); }));
+                  })
+                : Promise.resolve();
+              Promise.all([p1, p2]).catch(function () {}).finally(function () {
+                window.location.reload();
+              });
+            };
+          }
+        }
+
+        window.addEventListener('error', function (e) {
+          if (!window.__RENACER_MOUNTED__) {
+            var msg = (e && e.message) || 'Error al cargar scripts de la aplicación.';
+            showBootError(msg);
+          }
+        });
+
+        window.addEventListener('unhandledrejection', function (e) {
+          if (!window.__RENACER_MOUNTED__) {
+            var reason = e && e.reason ? (e.reason.message || String(e.reason)) : 'Error asíncrono de arranque.';
+            showBootError(reason);
+          }
+        });
+
+        window.setTimeout(function () {
+          if (!window.__RENACER_MOUNTED__) {
+            showBootError('Tiempo de espera agotado al inicializar la aplicación en este navegador.');
+          }
+        }, 8000);
+      })();
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
